@@ -3,38 +3,69 @@
 **基于Python的通用摄像头参数自动配置工具**
  - 最新版本
 ```bash
-ViTai-20250321.py
+2025/3/31
+Windows-ViTai3.py
 ```
 
 
 ## 项目简介
 本工具用于自动配置摄像头的参数（如对比度、饱和度、白平衡等），目前只支持Windows（Ubuntu系统在开发中）具备以下功能：
-- 自动检测并关闭冲突进程
-- 多摄像头参数同步配置
-- 实时视频流显示
-- 硬件信息报告生成
-- 支持查找指定相机
-- 自动检测系统中存在相同 VID/PID 组合的摄像头
 
+- 自动检测系统中存在相同 VID/PID 组合的摄像头
+- 自动检测并关闭冲突进程
+- 多摄像头参数同步配置（支持多设备同时设置）
+- 实时视频流显示（带设备信息叠加）
+- 硬件信息报告生成（含 VID/PID 检测）
+- 支持查找指定 VID/PID 的相机
+- 重复 VID/PID 设备检测与警告
 ## 安装指南
 
 ### 系统要求
 - Windows 10/11
-- Python 3.9
+- Python 3.9+
 
-### 脚本修改声明
+
+
+### 脚本测试环境
 
 - 用户名 
 ```bash
 Windows 10
+```
+- 电脑信息
+```bash
+版本	        Windows 11 专业工作站版
+版本号	        24H2
+安装日期	        ‎2025/‎1/‎6
+操作系统版本	    26100.3624
+序列号	        PF509JD8
+体验	        Windows 功能体验包 1000.26100.66.0
+```
+
+- 文件名 
+```bash
+ViTai.py
+```
+
+- 图标名
+```bash
+ViTailogo.ico
+```
+
+- Python包
+```bash
+python-3.9.13-amd64
+```
+
+- Python安装路径 
+```bash
+C:\Program Files\Python39
 ```
 
 - Python脚本路径 
 ```bash
 C:\Users\Windows 10\Desktop\ViTai.py
 ```
-
-
 
 - 查找指定相机
 ```python
@@ -68,12 +99,16 @@ AMCAP_EXE_NAME = "amcap+v3.0.9.exe"
 CAMERA_INIT_DELAY = 1
 # 显示摄像头画面
 SHOW_CAMERA_WINDOW = True
+# 显示摄像头属性窗口
+SHOW_PROPERTY_WINDOW = False
 # 程序退出延时
 MAIN_DELAY = 10
+# 需要关闭的属性窗口关键字
+KEYWORDS = ["ViTai 属性"]
 # 读取参数等待时间
 PARAM_READ_DELAY = 1
-#exe窗口自动关闭控制
-AUTO_CLOSE_WINDOW = False  
+#窗口自动关闭控制
+AUTO_CLOSE_WINDOW = False
 ```
 ## 打包为exe（Windows）
 
@@ -82,7 +117,7 @@ AUTO_CLOSE_WINDOW = False
 cd "C:\Users\Windows 10\Desktop"
 ```
 ```bash
-& "C:\Program Files\Python39\python.exe" -m PyInstaller --onefile --distpath "C:\Users\Windows 10\Desktop"  --hidden-import=colorama ViTai.py
+& "C:\Program Files\Python39\python.exe" -m PyInstaller --onefile --distpath "C:\Users\Windows 10\Desktop" --hidden-import=colorama --icon=ViTailogo.ico ViTai3.py
 ```
 
 ## 功能特性
@@ -95,6 +130,14 @@ cd "C:\Users\Windows 10\Desktop"
 0      | Integrated Camera              | 174F     | 1820   | N/A            | N/A
 ----------------------------------------------------------------------------------------------------
 1      | ViTai                          | F225     | 0001   | N/A            | N/A  
+2      | ViTai                          | AC20     | 0001   | N/A            | N/A  
+
+==================================== 检测到重复VID/PID设备组合 =====================================
+ ❗ VID: 174F, PID: 1820
+
+===================================== 找到指定 PID/VID 的设备 ======================================
+ ⚠️ 设备名称: ViTai, VID: F225, PID: 0001
+
 ```
 
 ### 2. 参数配置示例
@@ -108,10 +151,7 @@ class CameraConfig:
     }
 ```
 - 部分硬件不支持声明（需要与厂商确认）
-```python
-def print_unsupported_param_info():
-    print()# 添加空行
-    print(f"{YELLOW}{center_text(f' {TARGET_CAMERA_NAME} 相机配置声明 ', 100, '=')}{RESET}")    
+```python 
     print("降噪强度:   可能摄像头硬件没有内置降噪功能或驱动不支持调节降噪强度")
     print("数字变焦:   可能需要光学变焦镜头并通过物理控制，或摄像头本身不支持数字变焦")
     print("帧率:      可能摄像头硬件不支持指定的帧率范围或驱动未提供设置接口")
@@ -143,6 +183,10 @@ def print_unsupported_param_info():
 3. 参数调整可能导致图像异常，建议先备份原始配置
 
 ## 版本更新日志
+### v 2025.03.31
+- 新增：摄像头属性窗口显示控制开关
+- 优化：资源释放验证与异常处理机制
+
 ### v 2025.03.21
 - 新增重复ID检测功能
 - 优化硬件信息报告格式
