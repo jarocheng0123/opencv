@@ -3,13 +3,12 @@
 **基于Python的通用摄像头参数自动配置工具**
  - 最新版本
 ```bash
-2025/3/31
-Windows-ViTai3.py
+2025/4/23
+Windows-ViTai4.py
 ```
 
-
 ## 项目简介
-本工具用于自动配置摄像头的参数（如对比度、饱和度、白平衡等），目前只支持Windows（Ubuntu系统在开发中）具备以下功能：
+本工具用于自动配置摄像头的参数具备以下功能：
 
 - 自动检测系统中存在相同 VID/PID 组合的摄像头
 - 自动检测并关闭冲突进程
@@ -24,8 +23,6 @@ Windows-ViTai3.py
 - Windows 10/11
 - Python 3.9+
 
-
-
 ### 脚本测试环境
 
 - 用户名 
@@ -37,7 +34,7 @@ Windows 10
 版本	        Windows 11 专业工作站版
 版本号	        24H2
 安装日期	        ‎2025/‎1/‎6
-操作系统版本	26100.3624
+操作系统版本	    26100.3624
 序列号	        PF509JD8
 体验	        Windows 功能体验包 1000.26100.66.0
 ```
@@ -108,8 +105,20 @@ KEYWORDS = ["ViTai 属性"]
 # 读取参数等待时间
 PARAM_READ_DELAY = 1
 #窗口自动关闭控制
-AUTO_CLOSE_WINDOW = False
+AUTO_CLOSE_WINDOW = False  # True: 程序结束后自动关闭窗口 | False: 保持窗口等待用户关闭
+# 选择要使用的参数配置方案名称
+CONFIG_NAME = "PARAM_INFO_DEFAULT"
 ```
+
+### 预设参数配置方案说明  
+| 方案名称          | 主要参数调整                                                                 | 适用场景                |
+|-------------------|------------------------------------------------------------------------------|-------------------------|
+| `PARAM_INFO_DEFAULT` | 默认参数，自动白平衡开启，亮度-39，伽玛300，白平衡色温6500（硬件推荐值）     | 通用场景                |
+| `PARAM_INFO_A`     | 自动白平衡**关闭**，亮度-64（最低），白平衡色温6000（暖色调）                | 白色9×9软体检测         |
+| `PARAM_INFO_B`     | 自动白平衡**关闭**，亮度0（中间值），其他参数保持默认                        | 灰色9×9软体检测         |
+| `PARAM_INFO_C`     | 自动白平衡**关闭**，亮度0，伽玛100（低对比度）                              | 纯灰色软体（低反光场景）|
+| `PARAM_INFO_D`     | 自动白平衡**关闭**，亮度-64（最低），伽玛100（低对比度）                    | 纯白色软体（高反光场景）|
+
 ## 打包为exe（Windows）
 
 **Windows PowerShell 使用 PyInstaller 打包**：
@@ -141,20 +150,50 @@ cd "C:\Users\Windows 10\Desktop"
 ```
 
 ### 2. 参数配置示例
+ - 配置方案使用方法
+1. 在用户配置区找到`CONFIG_NAME`参数：  
+   ```python  
+   # 选择要使用的参数配置方案名称  
+   CONFIG_NAME = "PARAM_INFO_DEFAULT"  
+   ```  
+2. 将`CONFIG_NAME`设置为上述方案名称（如`"PARAM_INFO_A"`）即可生效。  
+3. 支持自定义方案：如需新增配置，可在`CameraConfig`类中添加新的参数组（如`PARAM_INFO_E`），并更新`PARAM_CONFIG_MAP`映射关系。
+
 - 参数配置需要根据实际情况选择
 ```python
 class CameraConfig:
-    PARAM_INFO = {
-        "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100)},
-        "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180)},
-        # ...更多参数
+    PARAM_INFO_DEFAULT = {
+        # 默认值#########################################################################################################
+        "Brightness": {"chinese_name": "亮度调节", "value": -39, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
+        "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100), "cv_constant": cv2.CAP_PROP_CONTRAST},
+        "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180), "cv_constant": cv2.CAP_PROP_HUE},
+        "Saturation": {"chinese_name": "饱和度", "value": 72, "range": (0, 100),"cv_constant": cv2.CAP_PROP_SATURATION},
+        "Sharpness": {"chinese_name": "清晰度", "value": 75, "range": (0, 100), "cv_constant": cv2.CAP_PROP_SHARPNESS},
+        "Gamma": {"chinese_name": "伽玛校正", "value": 300, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
+        "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6500, "range": (2800, 6500), "cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
+        "Gain": {"chinese_name": "增益", "value": 64, "range": (1, 128), "cv_constant": cv2.CAP_PROP_GAIN},
+        "Focus": {"chinese_name": "焦点", "value": 68, "range": (0, 1023), "auto_support": True,"cv_constant": cv2.CAP_PROP_FOCUS},
+        "Exposure": {"chinese_name": "曝光值", "value": -9, "range": (-14, 0), "cv_constant": cv2.CAP_PROP_EXPOSURE},
+        # 自动模式########################################################################################################
+        "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 1, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
+        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
+        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
+        # 设置固定值######################################################################################################
+
+        # 不支持参数######################################################################################################
+        # "NoiseReduction": {"chinese_name": "降噪强度", "value": 50, "range": (0, 100), "cv_constant": None},
+        # "Zoom": {"chinese_name": "数字变焦", "value": 0, "range": (0, 100), "cv_constant": cv2.CAP_PROP_ZOOM},
+        # "FrameRate": {"chinese_name": "帧率", "value": 30, "range": (1, 60), "cv_constant": cv2.CAP_PROP_FPS},
+        # "ResolutionWidth": {"chinese_name": "分辨率宽度", "value": 1920, "range": (640, 3840), "cv_constant": cv2.CAP_PROP_FRAME_WIDTH},
+        # "ResolutionHeight": {"chinese_name": "分辨率高度", "value": 1080, "range": (480, 2160), "cv_constant": cv2.CAP_PROP_FRAME_HEIGHT},
+        # "ColorMode": {"chinese_name": "色彩模式", "value": 0, "range": (0, 2), "cv_constant": None}
     }
 ```
 - 部分硬件不支持声明（需要与厂商确认）
 ```python 
     print("降噪强度:   可能摄像头硬件没有内置降噪功能或驱动不支持调节降噪强度")
     print("数字变焦:   可能需要光学变焦镜头并通过物理控制，或摄像头本身不支持数字变焦")
-    print("帧率:      可能摄像头硬件不支持指定的帧率范围或驱动未提供设置接口")
+    print("帧率:       可能摄像头硬件不支持指定的帧率范围或驱动未提供设置接口")
     print("分辨率宽度: 可能摄像头硬件不支持指定的分辨率宽度或驱动未提供设置接口")
     print("分辨率高度: 可能摄像头硬件不支持指定的分辨率高度或驱动未提供设置接口")
     print("色彩模式:   可能摄像头硬件不支持多种色彩模式或驱动未提供设置接口")
@@ -177,12 +216,19 @@ class CameraConfig:
 - 减少参数调整频率
 - 检查系统资源占用情况
 
+**Q: 参数设置后画面异常（过亮/过暗）怎么办？**  
+- A: 尝试切换不同的预设方案（如`PARAM_INFO_DEFAULT`或`PARAM_INFO_A`）
+
 ### 安全声明
 1. 本程序需要访问摄像头设备，请确保已获得相应权限
 2. 自动关闭进程功能可能会影响其他应用程序，请谨慎使用
 3. 参数调整可能导致图像异常，建议先备份原始配置
 
 ## 版本更新日志
+### v 2025.04.23
+- 新增：多参数配置方案支持
+- 优化：参数配置模块化，不同方案的参数独立维护，提高可扩展性。  
+
 ### v 2025.03.31
 - 新增：摄像头属性窗口显示控制开关
 - 优化：资源释放验证与异常处理机制
