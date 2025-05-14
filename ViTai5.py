@@ -1,22 +1,27 @@
 # -*- coding: utf-8 -*-
+# 修改日期 2025-5-14
 
-# ███████████████████████████████████████████████  Windows安装依赖和打包   ███████████████████████████████████████████████
-# 修改日期 2025-4-23
-
-# 用户名          Windows 10
-# 文件名          ViTai3.py
+# ██████████████████████████████████████████████████  Windows系统信息  ██████████████████████████████████████████████████
+# 主机名:           DESKTOP-0MI7116
+# OS 名称:          Microsoft Windows 10 专业工作站版
+# OS 版本:          10.0.19045 暂缺 Build 19045
+# OS 制造商:        Microsoft Corporation
+# OS 配置:          独立工作站
+# OS 构件类型:      Multiprocessor Free
+# 注册的所有人:      Windows 10
+# ██████████████████████████████████████████████████  Python脚本信息   ██████████████████████████████████████████████████
+# 文件名          ViTai5.py
 # 图标名          ViTailogo.ico
 # 文件路径        C:\Users\Windows 10\Desktop
 # Python版本     python-3.9.13-amd64
 # Python位置     C:\Program Files\Python39
-# Windows版本    Windows 11 专业工作站版 24H2 26100.3624
-
+# ███████████████████████████████████████████████  Windows安装依赖和打包   ███████████████████████████████████████████████
 # Windows PowerShell (管理员)(A) 使用 pip 安装依赖
 # & "C:\Program Files\Python39\python.exe" -m pip install --upgrade pip --verbose pywin32 wmi opencv-python psutil PyCameraList pyinstaller -i https://mirrors.aliyun.com/pypi/simple
 
 # Windows PowerShell 使用 PyInstaller 打包到桌面
 # cd "C:\Users\Windows 10\Desktop"
-# & "C:\Program Files\Python39\python.exe" -m PyInstaller --onefile --distpath "C:\Users\Windows 10\Desktop"  --hidden-import=colorama --icon=ViTailogo.ico ViTai3.py
+# & "C:\Program Files\Python39\python.exe" -m PyInstaller --onefile --distpath "C:\Users\Windows 10\Desktop"  --hidden-import=colorama --icon=ViTailogo.ico ViTai5.py
 # ██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
 # -------------------- 导入依赖 --------------------
@@ -26,6 +31,7 @@ import sys
 import wmi
 import cv2
 import time
+import zlib
 import winreg
 import psutil
 import win32gui
@@ -78,6 +84,8 @@ print()# 添加空行
 # -------------------- 用户配置区 --------------------
 # 摄像头名称
 TARGET_CAMERA_NAME = "ViTai"
+# SN码固定前缀
+NAME_GF225 = "GF225"
 # 指定PID，VID 组合
 SPECIFIED_PIDS_VIDS = [("F225", "0001")]
 # 需要关闭的进程
@@ -89,70 +97,31 @@ SHOW_CAMERA_WINDOW = True
 # 显示摄像头属性窗口
 SHOW_PROPERTY_WINDOW = False
 # 程序退出延时
-MAIN_DELAY = 5
+MAIN_DELAY = 10
 # 需要关闭的属性窗口关键字
 KEYWORDS = ["ViTai 属性"]
 # 读取参数等待时间
 PARAM_READ_DELAY = 1
 #窗口自动关闭控制
 AUTO_CLOSE_WINDOW = False  # True: 程序结束后自动关闭窗口 | False: 保持窗口等待用户关闭
-# 选择要使用的参数配置方案名称
-CONFIG_NAME = "PARAM_INFO_DEFAULT"
-
-# PARAM_INFO_DEFAULT 默认参数
-# PARAM_INFO_A 白色9*9软体
-# PARAM_INFO_B 灰色9*9软体
-# PARAM_INFO_C 纯灰色软体
-# PARAM_INFO_D 纯白色软体
 
 # -------------------- 摄像头参数配置 --------------------
 class CameraConfig:
-
-    PARAM_INFO_DEFAULT = { # 默认参数
+    PARAM_INFO = {
         # 默认值#########################################################################################################
-        "Brightness": {"chinese_name": "亮度调节", "value": -39, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
         "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100), "cv_constant": cv2.CAP_PROP_CONTRAST},
         "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180), "cv_constant": cv2.CAP_PROP_HUE},
         "Saturation": {"chinese_name": "饱和度", "value": 72, "range": (0, 100),"cv_constant": cv2.CAP_PROP_SATURATION},
         "Sharpness": {"chinese_name": "清晰度", "value": 75, "range": (0, 100), "cv_constant": cv2.CAP_PROP_SHARPNESS},
         "Gamma": {"chinese_name": "伽玛校正", "value": 300, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6500, "range": (2800, 6500), "cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
         "Gain": {"chinese_name": "增益", "value": 64, "range": (1, 128), "cv_constant": cv2.CAP_PROP_GAIN},
         "Focus": {"chinese_name": "焦点", "value": 68, "range": (0, 1023), "auto_support": True,"cv_constant": cv2.CAP_PROP_FOCUS},
         "Exposure": {"chinese_name": "曝光值", "value": -9, "range": (-14, 0), "cv_constant": cv2.CAP_PROP_EXPOSURE},
         # 自动模式########################################################################################################
-        "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 1, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
-        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
-        # 设置固定值######################################################################################################
-
-        # 不支持参数######################################################################################################
-        # "NoiseReduction": {"chinese_name": "降噪强度", "value": 50, "range": (0, 100), "cv_constant": None},
-        # "Zoom": {"chinese_name": "数字变焦", "value": 0, "range": (0, 100), "cv_constant": cv2.CAP_PROP_ZOOM},
-        # "FrameRate": {"chinese_name": "帧率", "value": 30, "range": (1, 60), "cv_constant": cv2.CAP_PROP_FPS},
-        # "ResolutionWidth": {"chinese_name": "分辨率宽度", "value": 1920, "range": (640, 3840), "cv_constant": cv2.CAP_PROP_FRAME_WIDTH},
-        # "ResolutionHeight": {"chinese_name": "分辨率高度", "value": 1080, "range": (480, 2160), "cv_constant": cv2.CAP_PROP_FRAME_HEIGHT},
-        # "ColorMode": {"chinese_name": "色彩模式", "value": 0, "range": (0, 2), "cv_constant": None}
-    }
-
-    PARAM_INFO_A = { # 自动白平衡关 亮度-64 白平衡6000
-        # 默认值#########################################################################################################
-        # "Brightness": {"chinese_name": "亮度调节", "value": -39, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100), "cv_constant": cv2.CAP_PROP_CONTRAST},
-        "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180), "cv_constant": cv2.CAP_PROP_HUE},
-        "Saturation": {"chinese_name": "饱和度", "value": 72, "range": (0, 100),"cv_constant": cv2.CAP_PROP_SATURATION},
-        "Sharpness": {"chinese_name": "清晰度", "value": 75, "range": (0, 100), "cv_constant": cv2.CAP_PROP_SHARPNESS},
-        "Gamma": {"chinese_name": "伽玛校正", "value": 300, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        # "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6500, "range": (2800, 6500), "cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
-        "Gain": {"chinese_name": "增益", "value": 64, "range": (1, 128), "cv_constant": cv2.CAP_PROP_GAIN},
-        "Focus": {"chinese_name": "焦点", "value": 68, "range": (0, 1023), "auto_support": True,"cv_constant": cv2.CAP_PROP_FOCUS},
-        "Exposure": {"chinese_name": "曝光值", "value": -9, "range": (-14, 0), "cv_constant": cv2.CAP_PROP_EXPOSURE},
-        # 自动模式########################################################################################################
-        # "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 1, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
-        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
-        # 设置固定值######################################################################################################
         "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
+        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
+        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
+        # 设置固定值######################################################################################################
         "Brightness": {"chinese_name": "亮度调节", "value": -64, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
         "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6000, "range": (2800, 6500),"cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
         # 不支持参数######################################################################################################
@@ -163,104 +132,6 @@ class CameraConfig:
         # "ResolutionHeight": {"chinese_name": "分辨率高度", "value": 1080, "range": (480, 2160), "cv_constant": cv2.CAP_PROP_FRAME_HEIGHT},
         # "ColorMode": {"chinese_name": "色彩模式", "value": 0, "range": (0, 2), "cv_constant": None}
     }
-
-    PARAM_INFO_B = { # 自动白平衡关 亮度0
-        # 默认值#########################################################################################################
-        # "Brightness": {"chinese_name": "亮度调节", "value": -39, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100), "cv_constant": cv2.CAP_PROP_CONTRAST},
-        "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180), "cv_constant": cv2.CAP_PROP_HUE},
-        "Saturation": {"chinese_name": "饱和度", "value": 72, "range": (0, 100),"cv_constant": cv2.CAP_PROP_SATURATION},
-        "Sharpness": {"chinese_name": "清晰度", "value": 75, "range": (0, 100), "cv_constant": cv2.CAP_PROP_SHARPNESS},
-        "Gamma": {"chinese_name": "伽玛校正", "value": 300, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6500, "range": (2800, 6500), "cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
-        "Gain": {"chinese_name": "增益", "value": 64, "range": (1, 128), "cv_constant": cv2.CAP_PROP_GAIN},
-        "Focus": {"chinese_name": "焦点", "value": 68, "range": (0, 1023), "auto_support": True,"cv_constant": cv2.CAP_PROP_FOCUS},
-        "Exposure": {"chinese_name": "曝光值", "value": -9, "range": (-14, 0), "cv_constant": cv2.CAP_PROP_EXPOSURE},
-        # 自动模式########################################################################################################
-        # "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 1, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
-        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
-        # 设置固定值######################################################################################################
-        "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "Brightness": {"chinese_name": "亮度调节", "value": 0, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        # 不支持参数######################################################################################################
-        # "NoiseReduction": {"chinese_name": "降噪强度", "value": 50, "range": (0, 100), "cv_constant": None},
-        # "Zoom": {"chinese_name": "数字变焦", "value": 0, "range": (0, 100), "cv_constant": cv2.CAP_PROP_ZOOM},
-        # "FrameRate": {"chinese_name": "帧率", "value": 30, "range": (1, 60), "cv_constant": cv2.CAP_PROP_FPS},
-        # "ResolutionWidth": {"chinese_name": "分辨率宽度", "value": 1920, "range": (640, 3840), "cv_constant": cv2.CAP_PROP_FRAME_WIDTH},
-        # "ResolutionHeight": {"chinese_name": "分辨率高度", "value": 1080, "range": (480, 2160), "cv_constant": cv2.CAP_PROP_FRAME_HEIGHT},
-        # "ColorMode": {"chinese_name": "色彩模式", "value": 0, "range": (0, 2), "cv_constant": None}
-    }
-
-    PARAM_INFO_C = { # 自动白平衡关 亮度0 伽玛100
-        # 默认值#########################################################################################################
-        # "Brightness": {"chinese_name": "亮度调节", "value": -39, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100), "cv_constant": cv2.CAP_PROP_CONTRAST},
-        "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180), "cv_constant": cv2.CAP_PROP_HUE},
-        "Saturation": {"chinese_name": "饱和度", "value": 72, "range": (0, 100),"cv_constant": cv2.CAP_PROP_SATURATION},
-        "Sharpness": {"chinese_name": "清晰度", "value": 75, "range": (0, 100), "cv_constant": cv2.CAP_PROP_SHARPNESS},
-        # "Gamma": {"chinese_name": "伽玛校正", "value": 300, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6500, "range": (2800, 6500), "cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
-        "Gain": {"chinese_name": "增益", "value": 64, "range": (1, 128), "cv_constant": cv2.CAP_PROP_GAIN},
-        "Focus": {"chinese_name": "焦点", "value": 68, "range": (0, 1023), "auto_support": True,"cv_constant": cv2.CAP_PROP_FOCUS},
-        "Exposure": {"chinese_name": "曝光值", "value": -9, "range": (-14, 0), "cv_constant": cv2.CAP_PROP_EXPOSURE},
-        # 自动模式########################################################################################################
-        # "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 1, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
-        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
-        # 设置固定值######################################################################################################
-        "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "Brightness": {"chinese_name": "亮度调节", "value": 0, "range": (-64, 64), "cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        "Gamma": {"chinese_name": "伽玛校正", "value": 100, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        # 不支持参数######################################################################################################
-        # "NoiseReduction": {"chinese_name": "降噪强度", "value": 50, "range": (0, 100), "cv_constant": None},
-        # "Zoom": {"chinese_name": "数字变焦", "value": 0, "range": (0, 100), "cv_constant": cv2.CAP_PROP_ZOOM},
-        # "FrameRate": {"chinese_name": "帧率", "value": 30, "range": (1, 60), "cv_constant": cv2.CAP_PROP_FPS},
-        # "ResolutionWidth": {"chinese_name": "分辨率宽度", "value": 1920, "range": (640, 3840), "cv_constant": cv2.CAP_PROP_FRAME_WIDTH},
-        # "ResolutionHeight": {"chinese_name": "分辨率高度", "value": 1080, "range": (480, 2160), "cv_constant": cv2.CAP_PROP_FRAME_HEIGHT},
-        # "ColorMode": {"chinese_name": "色彩模式", "value": 0, "range": (0, 2), "cv_constant": None}
-    }
-
-    PARAM_INFO_D = { # 自动白平衡关 亮度-64 伽玛100
-        # 默认值#########################################################################################################
-        # "Brightness": {"chinese_name": "亮度调节", "value": -39, "range": (-64, 64),"cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        "Contrast": {"chinese_name": "对比度", "value": 39, "range": (0, 100), "cv_constant": cv2.CAP_PROP_CONTRAST},
-        "Hue": {"chinese_name": "色调调节", "value": 0, "range": (-180, 180), "cv_constant": cv2.CAP_PROP_HUE},
-        "Saturation": {"chinese_name": "饱和度", "value": 72, "range": (0, 100),"cv_constant": cv2.CAP_PROP_SATURATION},
-        "Sharpness": {"chinese_name": "清晰度", "value": 75, "range": (0, 100), "cv_constant": cv2.CAP_PROP_SHARPNESS},
-        # "Gamma": {"chinese_name": "伽玛校正", "value": 300, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        "WhiteBalance": {"chinese_name": "白平衡色温", "value": 6500, "range": (2800, 6500), "cv_constant": cv2.CAP_PROP_WHITE_BALANCE_BLUE_U},
-        "Gain": {"chinese_name": "增益", "value": 64, "range": (1, 128), "cv_constant": cv2.CAP_PROP_GAIN},
-        "Focus": {"chinese_name": "焦点", "value": 68, "range": (0, 1023), "auto_support": True,"cv_constant": cv2.CAP_PROP_FOCUS},
-        "Exposure": {"chinese_name": "曝光值", "value": -9, "range": (-14, 0), "cv_constant": cv2.CAP_PROP_EXPOSURE},
-        # 自动模式########################################################################################################
-        # "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 1, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "AutoFocus": {"chinese_name": "自动对焦", "value": 1, "range": (0, 1), "cv_constant": cv2.CAP_PROP_AUTOFOCUS},
-        "AutoExposure": {"chinese_name": "自动曝光模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_EXPOSURE},
-        # 设置固定值######################################################################################################
-        "AutoWhiteBalance": {"chinese_name": "自动白平衡模式", "value": 0, "range": (0, 1),"cv_constant": cv2.CAP_PROP_AUTO_WB},
-        "Brightness": {"chinese_name": "亮度调节", "value": -64, "range": (-64, 64), "cv_constant": cv2.CAP_PROP_BRIGHTNESS},
-        "Gamma": {"chinese_name": "伽玛校正", "value": 100, "range": (100, 500), "cv_constant": cv2.CAP_PROP_GAMMA},
-        # 不支持参数######################################################################################################
-        # "NoiseReduction": {"chinese_name": "降噪强度", "value": 50, "range": (0, 100), "cv_constant": None},
-        # "Zoom": {"chinese_name": "数字变焦", "value": 0, "range": (0, 100), "cv_constant": cv2.CAP_PROP_ZOOM},
-        # "FrameRate": {"chinese_name": "帧率", "value": 30, "range": (1, 60), "cv_constant": cv2.CAP_PROP_FPS},
-        # "ResolutionWidth": {"chinese_name": "分辨率宽度", "value": 1920, "range": (640, 3840), "cv_constant": cv2.CAP_PROP_FRAME_WIDTH},
-        # "ResolutionHeight": {"chinese_name": "分辨率高度", "value": 1080, "range": (480, 2160), "cv_constant": cv2.CAP_PROP_FRAME_HEIGHT},
-        # "ColorMode": {"chinese_name": "色彩模式", "value": 0, "range": (0, 2), "cv_constant": None}
-    }
-
-    # 配置名称与参数字典的映射
-    PARAM_CONFIG_MAP = {
-        "PARAM_INFO_DEFAULT": PARAM_INFO_DEFAULT,
-        "PARAM_INFO_A": PARAM_INFO_A,
-        "PARAM_INFO_B": PARAM_INFO_B,
-        "PARAM_INFO_C": PARAM_INFO_C,
-        "PARAM_INFO_D": PARAM_INFO_D
-    }
-
-    # 如果用户没有配置 CONFIG_NAME，则使用默认参数 PARAM_INFO_DEFAULT
-    PARAM_INFO = PARAM_CONFIG_MAP.get(CONFIG_NAME, PARAM_INFO_DEFAULT)
 
     # 查询状态
     READ_PARAMS = {
@@ -363,6 +234,17 @@ def get_camera_hardware_info():
 
     return devices # 返回设备列表
 
+
+# 计算CRC16校验码
+def hash_crc16(sn: str) -> str:
+    return f"{zlib.crc32((sn + '95C8').encode()) & 0xFFFF:04X}"
+
+
+# 生成设备SN
+def generate_sn(name: str = "", pid: str = "") -> str:
+    return f"{name}{pid}{hash_crc16(f'{name}{pid}')}"
+
+
 # 生成系统报告
 def generate_system_report(): 
     report = []
@@ -439,6 +321,7 @@ def generate_system_report():
 
         # 打印目标设备
         for idx, name, vid, pid, serial, manufacturer in target_devices:
+            serial = generate_sn(NAME_GF225, pid) # 计算SN
             report.append(
                 f"\033[32m{idx:<6} | {name[:30]:<30} | {vid:<8} | {pid:<6} | {serial:<14} | {manufacturer} \033[0m "
             )
