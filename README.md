@@ -63,7 +63,7 @@ C:\Program Files\Python39
 
 - Python脚本路径 
 ```bash
-C:\Users\Windows 10\Desktop\ViTai.py
+C:\Users\Windows 10\Desktop\ViTai4.py
 ```
 
 - 查找指定相机
@@ -141,7 +141,7 @@ AUTO_CLOSE_WINDOW = False
 cd "C:\Users\Windows 10\Desktop"
 ```
 ```bash
-& "C:\Program Files\Python39\python.exe" -m PyInstaller --onefile --distpath "C:\Users\Windows 10\Desktop" --hidden-import=colorama --icon=ViTailogo.ico ViTai3.py
+& "C:\Program Files\Python39\python.exe" -m PyInstaller --onefile --distpath "C:\Users\Windows 10\Desktop" --hidden-import=colorama --icon=ViTailogo.ico ViTai4.py
 ```
 
 ## 功能特性
