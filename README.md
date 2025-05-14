@@ -3,8 +3,9 @@
 **基于Python的通用摄像头参数自动配置工具**
  - 最新版本
 ```bash
-2025/4/23
-Windows-ViTai4.py
+2025/5/14
+ViTai4.py
+ViTai测试2.py
 ```
 
 ## 项目简介
@@ -31,12 +32,13 @@ Windows 10
 ```
 - 电脑信息
 ```bash
-版本	        Windows 11 专业工作站版
-版本号	        24H2
-安装日期	        ‎2025/‎1/‎6
-操作系统版本	    26100.3624
-序列号	        PF509JD8
-体验	        Windows 功能体验包 1000.26100.66.0
+主机名:           DESKTOP-0MI7116
+OS 名称:          Microsoft Windows 10 专业工作站版
+OS 版本:          10.0.19045 暂缺 Build 19045
+OS 制造商:        Microsoft Corporation
+OS 配置:          独立工作站
+OS 构件类型:      Multiprocessor Free
+注册的所有人:      Windows 10
 ```
 
 - 文件名 
@@ -88,6 +90,8 @@ SPECIFIED_PIDS_VIDS = [("F225", "0001")]
 ```python
 # 摄像头名称
 TARGET_CAMERA_NAME = "ViTai"
+# SN码固定前缀
+NAME_GF225 = "GF225"
 # 指定PID，VID 组合
 SPECIFIED_PIDS_VIDS = [("F225", "0001")]
 # 需要关闭的进程
@@ -106,8 +110,6 @@ KEYWORDS = ["ViTai 属性"]
 PARAM_READ_DELAY = 1
 #窗口自动关闭控制
 AUTO_CLOSE_WINDOW = False  # True: 程序结束后自动关闭窗口 | False: 保持窗口等待用户关闭
-# 选择要使用的参数配置方案名称
-CONFIG_NAME = "PARAM_INFO_DEFAULT"
 ```
 
 ### 预设参数配置方案说明  
@@ -138,8 +140,7 @@ cd "C:\Users\Windows 10\Desktop"
 0      | Integrated IR Camera           | 174F     | 1820   | N/A            | N/A
 0      | Integrated Camera              | 174F     | 1820   | N/A            | N/A
 ----------------------------------------------------------------------------------------------------
-1      | ViTai                          | F225     | 0001   | N/A            | N/A  
-2      | ViTai                          | AC20     | 0001   | N/A            | N/A  
+1      | ViTai                          | FFFF     | 9001   | GF2259001A9B3  | N/A
 
 ==================================== 检测到重复VID/PID设备组合 =====================================
  ❗ VID: 174F, PID: 1820
@@ -225,6 +226,9 @@ class CameraConfig:
 3. 参数调整可能导致图像异常，建议先备份原始配置
 
 ## 版本更新日志
+### v 2025.05.14
+- 新增：SN码解析
+
 ### v 2025.04.23
 - 新增：多参数配置方案支持
 - 优化：参数配置模块化，不同方案的参数独立维护，提高可扩展性。  
